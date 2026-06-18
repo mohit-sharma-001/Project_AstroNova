@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project AstroNova - Satellite Image Retrieval System</title>
+  <!-- Google Fonts: Orbitron for titles, Share Tech Mono for terminal/numbers -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Fullscreen Universe Background Canvas -->
+  <canvas id="universe-canvas"></canvas>
+
+  <!-- Modality Shift Transition Overlay -->
+  <div id="glitch-overlay">
+    <div class="glitch-line"></div>
+    <div class="glitch-text">MODALITY SHIFT: LOADING PATHWAY</div>
+    <div class="glitch-subtext">ALIGNING MULTI-MODAL EMBEDDING CHANNELS...</div>
+  </div>
+
+  <!-- Main System Shell -->
+  <div id="system-shell" class="modality-s1-to-s2">
+    <!-- Header Command Bar -->
+    <header id="command-header">
+      <div class="header-left">
+        <div class="system-logo">
+          <svg viewBox="0 0 100 100" class="logo-svg">
+            <polygon points="50,10 90,30 90,70 50,90 10,70 10,30" class="logo-hexagon"/>
+            <circle cx="50" cy="50" r="15" class="logo-core"/>
+            <line x1="50" y1="10" x2="50" y2="90" class="logo-axis"/>
+            <line x1="10" y1="50" x2="90" y2="50" class="logo-axis"/>
+          </svg>
+        </div>
+        <div class="title-block">
+          <h1>PROJECT ASTRONOVA</h1>
+          <div class="subtitle">CROSS-MODAL SATELLITE IMAGE RETRIEVAL SYSTEM</div>
+        </div>
+      </div>
+
+      <div class="header-center">
+        <!-- Modality Selector Pathway (Replacing Tactical Directory) -->
+        <div class="selector-container">
+          <label for="modality-selector">FLIP MODALITY:</label>
+          <select id="modality-selector">
+            <option value="S1-to-S2">SAR (S1) ➔ OPTICAL (S2)</option>
+            <option value="S2-to-S1">OPTICAL (S2) ➔ SAR (S1)</option>
+            <option value="S2-to-IR">OPTICAL (S2) ➔ INFRARED (IR)</option>
+            <option value="IR-to-S2">INFRARED (IR) ➔ OPTICAL (S2)</option>
+            <option value="S1-to-IR">SAR (S1) ➔ INFRARED (IR)</option>
+            <option value="IR-to-S1">INFRARED (IR) ➔ SAR (S1)</option>
+          </select>
+        </div>
+        <!-- Manual Image Upload -->
+        <div class="upload-container">
+          <button id="btn-upload-trigger" class="btn-tactical">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z" fill="currentColor"/>
+            </svg>
+            UPLOAD SOURCE SCAN
+          </button>
+          <input type="file" id="source-upload" accept="image/*" style="display: none;">
+        </div>
+      </div>
+
+      <div class="header-right">
+        <!-- Live System Badges -->
+        <div class="badge secure">DATALINK: SECURE</div>
+        <div class="badge latency" id="latency-val">LATENCY: 0.00 ms</div>
+      </div>
+    </header>
+
+    <!-- Main Workspace Layout Grid -->
+    <main id="dashboard-grid">
+      
+      <!-- CENTER PANEL: Hexagonal Mosaic Grid -->
+      <section id="panel-hex-grid" class="glass-panel">
+        <div class="panel-header">
+          <span class="panel-tag">// SEARCH MODAL SPACE</span>
+          <h2 id="hex-grid-title">RETRIEVAL NEIGHBORHOOD MAP</h2>
+          <div class="scanner-line"></div>
+        </div>
+        <div class="panel-content hex-container-wrap">
+          <!-- Hexagonal Honeycomb Canvas/CSS Area -->
+          <div class="honeycomb-grid">
+            
+            <!-- Central Node (Query) -->
+            <div id="node-query" class="hex-item query-node">
+              <div class="hex-in1">
+                <div class="hex-in2">
+                  <div class="hex-image-container">
+                    <canvas id="canvas-query-image" class="hex-img-canvas"></canvas>
+                    <div class="hex-label">QUERY INPUT</div>
+                  </div>
+                </div>
+              </div>
+              <div class="hex-pulsar"></div>
+            </div>
+
+            <!-- Surrounding Nodes (Matches) -->
+            <!-- Match 1: Top-Center -->
+            <div id="node-result-1" class="circle-item result-node disabled-node pos-tc">
+              <div class="circle-image-container">
+                <canvas id="canvas-result-1" class="circle-img-canvas"></canvas>
+                <div class="circle-label">MATCH 01</div>
+              </div>
+              <!-- SVG Circular Confidence Ring -->
+              <svg class="confidence-ring" viewBox="0 0 170 170">
+                <circle class="ring-bg" cx="85" cy="85" r="80"></circle>
+                <circle id="ring-fill-1" class="ring-fill" cx="85" cy="85" r="80" stroke-dasharray="503" stroke-dashoffset="503"></circle>
+              </svg>
+              <div class="confidence-value" id="val-conf-1">--%</div>
+            </div>
+
+            <!-- Match 2: Top-Right -->
+            <div id="node-result-2" class="circle-item result-node disabled-node pos-tr">
+              <div class="circle-image-container">
+                <canvas id="canvas-result-2" class="circle-img-canvas"></canvas>
+                <div class="circle-label">MATCH 02</div>
+              </div>
+              <svg class="confidence-ring" viewBox="0 0 170 170">
+                <circle class="ring-bg" cx="85" cy="85" r="80"></circle>
+                <circle id="ring-fill-2" class="ring-fill" cx="85" cy="85" r="80" stroke-dasharray="503" stroke-dashoffset="503"></circle>
+              </svg>
+              <div class="confidence-value" id="val-conf-2">--%</div>
+            </div>
+
+            <!-- Match 3: Bottom-Right -->
+            <div id="node-result-3" class="circle-item result-node disabled-node pos-br">
+              <div class="circle-image-container">
+                <canvas id="canvas-result-3" class="circle-img-canvas"></canvas>
+                <div class="circle-label">MATCH 03</div>
+              </div>
+              <svg class="confidence-ring" viewBox="0 0 170 170">
+                <circle class="ring-bg" cx="85" cy="85" r="80"></circle>
+                <circle id="ring-fill-3" class="ring-fill" cx="85" cy="85" r="80" stroke-dasharray="503" stroke-dashoffset="503"></circle>
+              </svg>
+              <div class="confidence-value" id="val-conf-3">--%</div>
+            </div>
+
+            <!-- Match 4: Bottom-Left -->
+            <div id="node-result-4" class="circle-item result-node disabled-node pos-bl">
+              <div class="circle-image-container">
+                <canvas id="canvas-result-4" class="circle-img-canvas"></canvas>
+                <div class="circle-label">MATCH 04</div>
+              </div>
+              <svg class="confidence-ring" viewBox="0 0 170 170">
+                <circle class="ring-bg" cx="85" cy="85" r="80"></circle>
+                <circle id="ring-fill-4" class="ring-fill" cx="85" cy="85" r="80" stroke-dasharray="503" stroke-dashoffset="503"></circle>
+              </svg>
+              <div class="confidence-value" id="val-conf-4">--%</div>
+            </div>
+
+            <!-- Match 5: Top-Left -->
+            <div id="node-result-5" class="circle-item result-node disabled-node pos-tl">
+              <div class="circle-image-container">
+                <canvas id="canvas-result-5" class="circle-img-canvas"></canvas>
+                <div class="circle-label">MATCH 05</div>
+              </div>
+              <svg class="confidence-ring" viewBox="0 0 170 170">
+                <circle class="ring-bg" cx="85" cy="85" r="80"></circle>
+                <circle id="ring-fill-5" class="ring-fill" cx="85" cy="85" r="80" stroke-dasharray="503" stroke-dashoffset="503"></circle>
+              </svg>
+              <div class="confidence-value" id="val-conf-5">--%</div>
+            </div>
+
+          </div>
+
+          <!-- Sleek Horizontal Metadata Bar overlay -->
+          <div class="tactical-meta-bar">
+            [ COORDINATES: <span id="meta-coords">00.0000° N, 00.0000° E</span> | SEASON: <span id="meta-season">UNKNOWN</span> | CLOUD COVER: <span id="meta-clouds">0.00%</span> ]
+          </div>
+
+          <!-- Honeycomb grid details Overlay -->
+          <div class="honeycomb-spec-tag">
+            <span class="s1-tag">MODALITY A: SAR (S1)</span>
+            <span class="bridge-tag">⮂ CROSS-CORRELATION ⮀</span>
+            <span class="s2-tag">MODALITY B: OPTICAL (S2)</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT PANEL: Live Telemetry Ground Station Terminal -->
+      <section id="panel-telemetry" class="glass-panel">
+        <div class="panel-header">
+          <span class="panel-tag">// FEED: GROUND_STATION_LOG</span>
+          <h2>LIVE TELEMETRY STATION</h2>
+          <div class="scanner-line"></div>
+        </div>
+        <div class="panel-content terminal-wrap">
+          <div id="terminal-screen">
+            <div class="terminal-header">
+              ASTRONOVA SATELLITE CORE SYSTEM v4.9.2-RETRIEVAL
+              <br>CONNECTION: INTER-ORBITAL GROUND LINK SECURE
+              <br>--------------------------------------------------
+            </div>
+            <div id="terminal-logs">
+              <!-- Logs will append dynamically -->
+            </div>
+            <div class="terminal-prompt-line">
+              <span class="prompt-symbol">ASTRONOVA$</span>
+              <input type="text" id="terminal-input" placeholder="Type a command (e.g., /scan, /help, /flip)..." autocomplete="off">
+            </div>
+          </div>
+        </div>
+      </main>
+
+  </div>
+
+  <!-- Image Inspection Lightbox Modal -->
+  <div id="image-lightbox" class="lightbox-modal">
+    <span class="lightbox-close">&times;</span>
+    <div class="lightbox-content-wrap">
+      <canvas id="lightbox-canvas" class="lightbox-canvas"></canvas>
+      <div id="lightbox-label" class="lightbox-label">IMAGE INSPECTION LOCK</div>
+      <div id="lightbox-metadata" class="lightbox-metadata">COORDINATES: ... | ACCURACY: ...</div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
