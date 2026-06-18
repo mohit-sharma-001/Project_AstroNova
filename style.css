@@ -769,8 +769,8 @@ body {
   margin-top: 15px;
 }
 
-.s1-tag { color: #00e5ff; }
-.s2-tag { color: #9d4ede; }
+.s1-tag { color: var(--color-query); transition: color var(--transition-speed); }
+.s2-tag { color: var(--color-result); transition: color var(--transition-speed); }
 .bridge-tag { color: rgba(255,255,255,0.3); }
 
 /* RIGHT PANEL: Live Telemetry Terminal */

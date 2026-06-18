@@ -14,7 +14,7 @@ const API_CONFIG = {
 
 // 2. SYSTEM STATE CONFIGURATION
 const state = {
-  modality: "S1-to-S2",   // S1-to-S2, S2-to-S1, S2-to-IR, IR-to-S2, S1-to-IR, IR-to-S1
+  modality: "S1-to-S2",   // S1-to-S2, S2-to-S1
   activeTarget: null,     // Currently active target (defaults to Tokyo first)
   isScanning: false,      // Active scan status
 };
