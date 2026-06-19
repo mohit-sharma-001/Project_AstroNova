@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=1.3">
 </head>
 <body>
   <!-- Fullscreen Universe Background Canvas -->
@@ -22,7 +22,7 @@
   </div>
 
   <!-- Main System Shell -->
-  <div id="system-shell" class="modality-s1-to-s2">
+  <div id="system-shell" class="pathway-S1-to-S2">
     <!-- Header Command Bar -->
     <header id="command-header">
       <div class="header-left">
@@ -41,12 +41,27 @@
       </div>
 
       <div class="header-center">
-        <!-- Modality Selector Pathway (Replacing Tactical Directory) -->
+        <!-- Modality Selector Pathway -->
         <div class="selector-container">
           <label for="modality-selector">FLIP MODALITY:</label>
           <select id="modality-selector">
-            <option value="S1-to-S2">SAR (S1) ➔ OPTICAL (S2)</option>
-            <option value="S2-to-S1">OPTICAL (S2) ➔ SAR (S1)</option>
+            <optgroup label="CROSS-MODALITY">
+              <option value="S1-to-S2">SAR (S1) ➔ OPTICAL (S2)</option>
+              <option value="S2-to-S1">OPTICAL (S2) ➔ SAR (S1)</option>
+            </optgroup>
+            <optgroup label="UNIMODALITY">
+              <option value="S1-to-S1">SAR (S1) ➔ SAR (S1)</option>
+              <option value="S2-to-S2">OPTICAL (S2) ➔ OPTICAL (S2)</option>
+            </optgroup>
+          </select>
+        </div>
+        <!-- Output Count Selector -->
+        <div class="selector-container">
+          <label for="output-count-selector">OUTPUT COUNT:</label>
+          <select id="output-count-selector">
+            <option value="1">1 MATCH</option>
+            <option value="5" selected>5 MATCHES</option>
+            <option value="10">10 MATCHES</option>
           </select>
         </div>
         <!-- Manual Image Upload -->
@@ -80,87 +95,20 @@
         </div>
         <div class="panel-content hex-container-wrap">
           <!-- Hexagonal Honeycomb Canvas/CSS Area -->
-          <div class="honeycomb-grid">
+          <div class="honeycomb-grid" id="retrieval-grid-container">
+            <!-- Connecting Threads SVG Overlay -->
+            <svg id="retrieval-threads-svg"></svg>
             
             <!-- Central Node (Query) -->
-            <div id="node-query" class="hex-item query-node">
-              <div class="hex-in1">
-                <div class="hex-in2">
-                  <div class="hex-image-container">
-                    <canvas id="canvas-query-image" class="hex-img-canvas"></canvas>
-                    <div class="hex-label">QUERY INPUT</div>
-                  </div>
-                </div>
+            <div id="node-query" class="query-node shape-pentagon">
+              <div class="query-image-container">
+                <canvas id="canvas-query-image" class="query-img-canvas"></canvas>
+                <div class="query-label">QUERY INPUT</div>
               </div>
-              <div class="hex-pulsar"></div>
+              <div class="query-pulsar"></div>
             </div>
 
-            <!-- Surrounding Nodes (Matches) -->
-            <!-- Match 1: Top-Center -->
-            <div id="node-result-1" class="circle-item result-node disabled-node pos-tc">
-              <div class="circle-image-container">
-                <canvas id="canvas-result-1" class="circle-img-canvas"></canvas>
-                <div class="circle-label">MATCH 01</div>
-              </div>
-              <!-- SVG Circular Confidence Ring -->
-              <svg class="confidence-ring" viewBox="0 0 170 170">
-                <circle class="ring-bg" cx="85" cy="85" r="80"></circle>
-                <circle id="ring-fill-1" class="ring-fill" cx="85" cy="85" r="80" stroke-dasharray="503" stroke-dashoffset="503"></circle>
-              </svg>
-              <div class="confidence-value" id="val-conf-1">--%</div>
-            </div>
-
-            <!-- Match 2: Top-Right -->
-            <div id="node-result-2" class="circle-item result-node disabled-node pos-tr">
-              <div class="circle-image-container">
-                <canvas id="canvas-result-2" class="circle-img-canvas"></canvas>
-                <div class="circle-label">MATCH 02</div>
-              </div>
-              <svg class="confidence-ring" viewBox="0 0 170 170">
-                <circle class="ring-bg" cx="85" cy="85" r="80"></circle>
-                <circle id="ring-fill-2" class="ring-fill" cx="85" cy="85" r="80" stroke-dasharray="503" stroke-dashoffset="503"></circle>
-              </svg>
-              <div class="confidence-value" id="val-conf-2">--%</div>
-            </div>
-
-            <!-- Match 3: Bottom-Right -->
-            <div id="node-result-3" class="circle-item result-node disabled-node pos-br">
-              <div class="circle-image-container">
-                <canvas id="canvas-result-3" class="circle-img-canvas"></canvas>
-                <div class="circle-label">MATCH 03</div>
-              </div>
-              <svg class="confidence-ring" viewBox="0 0 170 170">
-                <circle class="ring-bg" cx="85" cy="85" r="80"></circle>
-                <circle id="ring-fill-3" class="ring-fill" cx="85" cy="85" r="80" stroke-dasharray="503" stroke-dashoffset="503"></circle>
-              </svg>
-              <div class="confidence-value" id="val-conf-3">--%</div>
-            </div>
-
-            <!-- Match 4: Bottom-Left -->
-            <div id="node-result-4" class="circle-item result-node disabled-node pos-bl">
-              <div class="circle-image-container">
-                <canvas id="canvas-result-4" class="circle-img-canvas"></canvas>
-                <div class="circle-label">MATCH 04</div>
-              </div>
-              <svg class="confidence-ring" viewBox="0 0 170 170">
-                <circle class="ring-bg" cx="85" cy="85" r="80"></circle>
-                <circle id="ring-fill-4" class="ring-fill" cx="85" cy="85" r="80" stroke-dasharray="503" stroke-dashoffset="503"></circle>
-              </svg>
-              <div class="confidence-value" id="val-conf-4">--%</div>
-            </div>
-
-            <!-- Match 5: Top-Left -->
-            <div id="node-result-5" class="circle-item result-node disabled-node pos-tl">
-              <div class="circle-image-container">
-                <canvas id="canvas-result-5" class="circle-img-canvas"></canvas>
-                <div class="circle-label">MATCH 05</div>
-              </div>
-              <svg class="confidence-ring" viewBox="0 0 170 170">
-                <circle class="ring-bg" cx="85" cy="85" r="80"></circle>
-                <circle id="ring-fill-5" class="ring-fill" cx="85" cy="85" r="80" stroke-dasharray="503" stroke-dashoffset="503"></circle>
-              </svg>
-              <div class="confidence-value" id="val-conf-5">--%</div>
-            </div>
+            <!-- Surrounding Nodes (Matches) loaded dynamically -->
 
           </div>
 
@@ -215,6 +163,6 @@
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=1.3"></script>
 </body>
 </html>

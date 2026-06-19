@@ -17,6 +17,7 @@ const state = {
   modality: "S1-to-S2",   // S1-to-S2, S2-to-S1
   activeTarget: null,     // Currently active target (defaults to Tokyo first)
   isScanning: false,      // Active scan status
+  outputCount: 5,         // Dynamic number of output nodes (1, 5, or 10)
 };
 
 // Tactical coordinate directory records
@@ -601,6 +602,7 @@ terminalInput.addEventListener("keydown", async (e) => {
         addLog("  /scan          - Trigger cross-modal retrieval scan", "info");
         addLog("  /clear         - Clear terminal console logs", "info");
         addLog("  /system-info   - Display core network attributes", "info");
+        addLog("  /flip [path]   - Toggle or set modality pathway (e.g. S1-to-S1)", "info");
         break;
       case "/scan":
         if (state.activeTarget) {
@@ -609,6 +611,25 @@ terminalInput.addEventListener("keydown", async (e) => {
         break;
       case "/clear":
         clearLogs();
+        break;
+      case "/flip":
+        if (parts.length > 1) {
+          const newPathway = parts[1].trim();
+          const validPathways = ["S1-to-S2", "S2-to-S1", "S1-to-S1", "S2-to-S2"];
+          const matched = validPathways.find(p => p.toLowerCase() === newPathway.toLowerCase());
+          if (matched) {
+            triggerModalityChange(matched);
+            document.getElementById("modality-selector").value = matched;
+            addLog(`[SYSTEM]: PATHWAY SET TO ${matched}`, "info");
+          } else {
+            addLog(`INVALID PATHWAY. OPTIONS: ${validPathways.join(", ")}`, "warn");
+          }
+        } else {
+          const next = state.modality === "S1-to-S2" ? "S2-to-S1" : "S1-to-S2";
+          triggerModalityChange(next);
+          document.getElementById("modality-selector").value = next;
+          addLog(`[SYSTEM]: PATHWAY TOGGLED TO ${next}`, "info");
+        }
         break;
       case "/system-info":
         addLog("SYSTEM PARAMETERS:", "info");
@@ -639,21 +660,28 @@ function mapSensorToProceduralType(sensorCode) {
 }
 
 // 6. PIPELINE CONTROLLER
+// 6. PIPELINE CONTROLLER
 async function triggerRetrievalPipeline(targetObj) {
   if (state.isScanning) return;
   state.isScanning = true;
   
   state.activeTarget = targetObj;
+  const count = state.outputCount || 5;
   
-  // 1. Reset matches status
+  // 1. Reset matches status and deactivate threads
   const resultNodes = document.querySelectorAll(".result-node");
   resultNodes.forEach(node => {
     node.classList.add("disabled-node");
   });
   
+  const threads = document.querySelectorAll(".retrieval-thread");
+  threads.forEach(t => {
+    t.classList.remove("active");
+  });
+  
   // 2. Clear terminal and log retrieval
   clearLogs();
-  await streamLog(`// INITIATING CROSS-MODAL RETRIEVAL SEQUENCE`, "warn", 5);
+  await streamLog(`// INITIATING MODAL RETRIEVAL SEQUENCE`, "warn", 5);
   await streamLog(`[SYSTEM]: LOCKING MODALITY PATHWAY: ${state.modality}`, "info", 5);
   await streamLog(`[TENSOR]: COMPUTING HIGH-RESOLUTION ALIGNMENT GRIDS...`, "info", 5);
   
@@ -688,7 +716,8 @@ async function triggerRetrievalPipeline(targetObj) {
         body: JSON.stringify({
           targetId: targetObj.id,
           modality: state.modality,
-          coordinates: { lat: targetObj.lat, lon: targetObj.lon }
+          coordinates: { lat: targetObj.lat, lon: targetObj.lon },
+          outputCount: count
         })
       });
       if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
@@ -709,10 +738,31 @@ async function triggerRetrievalPipeline(targetObj) {
   // Populate surrounding results
   await streamLog(`[NEIGHBORS]: INDEXING COSINE EMBEDDING SPACE MATCHES...`, "info", 5);
   
-  for (let i = 0; i < 5; i++) {
-    const res = retrievalResponse.results[i];
+  // Get results array and fill up to count if needed
+  let results = [...retrievalResponse.results];
+  if (results.length < count) {
+    const baseId = results[0] ? results[0].id.split("-").slice(0, 2).join("-") : "S2-MATCH";
+    for (let i = results.length; i < count; i++) {
+      const parentResult = results[i % results.length];
+      const confidence = Math.max(60.0, (parentResult.confidence - (i * 1.5) - Math.random() * 2.5)).toFixed(1);
+      const lat = parentResult.lat + (Math.random() * 0.05 - 0.025);
+      const lon = parentResult.lon + (Math.random() * 0.05 - 0.025);
+      const seed = parentResult.seed + i * 9;
+      results.push({
+        id: `${baseId}-${String(i + 1).padStart(2, '0')}`,
+        confidence: parseFloat(confidence),
+        lat: lat,
+        lon: lon,
+        seed: seed
+      });
+    }
+  }
+  
+  for (let i = 0; i < count; i++) {
+    const res = results[i];
     const nodeIndex = i + 1;
     const nodeEl = document.getElementById(`node-result-${nodeIndex}`);
+    if (!nodeEl) continue;
     
     // Draw matching procedural image
     const canvasId = `canvas-result-${nodeIndex}`;
@@ -721,19 +771,139 @@ async function triggerRetrievalPipeline(targetObj) {
     
     // Circle rings offset calculations
     const ringFill = document.getElementById(`ring-fill-${nodeIndex}`);
-    const dashArray = 503; 
-    const percentage = res.confidence / 100;
-    const offset = dashArray - (dashArray * percentage);
+    if (ringFill) {
+      const dashArray = parseFloat(ringFill.getAttribute("data-dasharray")) || 503;
+      const percentage = res.confidence / 100;
+      const offset = dashArray - (dashArray * percentage);
+      
+      ringFill.style.strokeDashoffset = offset;
+    }
+    const valConfEl = document.getElementById(`val-conf-${nodeIndex}`);
+    if (valConfEl) {
+      valConfEl.innerText = `${res.confidence}%`;
+    }
     
-    ringFill.style.strokeDashoffset = offset;
-    document.getElementById(`val-conf-${nodeIndex}`).innerText = `${res.confidence}%`;
+    // Activate matching thread connection line
+    const threadEl = document.getElementById(`thread-link-${nodeIndex}`);
+    if (threadEl) {
+      threadEl.classList.add("active");
+    }
     
     nodeEl.classList.remove("disabled-node");
-    await new Promise(r => setTimeout(r, 60)); 
+    await new Promise(r => setTimeout(r, Math.max(20, 60 - count * 4))); 
   }
   
   await streamLog(`[SUCCESS]: RETRIEVAL PIPELINE SECURED. OUTPUT NODES ACTIVE.`, "info", 5);
   state.isScanning = false;
+}
+
+// 6.5. DYNAMIC RESULT NODES LAYOUT GENERATOR
+function renderDynamicResultNodes() {
+  const container = document.getElementById("retrieval-grid-container");
+  if (!container) return;
+  
+  // Remove existing result nodes
+  const existing = container.querySelectorAll(".result-node");
+  existing.forEach(el => el.remove());
+  
+  // Clear and prepare connecting threads SVG
+  const svg = document.getElementById("retrieval-threads-svg");
+  if (svg) {
+    svg.innerHTML = "";
+  }
+  
+  const count = state.outputCount || 5;
+  let width, height, R;
+  let angles = [];
+  
+  if (count === 1) {
+    width = 150;
+    height = 125;
+    R = 210;
+    angles = [-90];
+  } else if (count === 5) {
+    width = 140;
+    height = 115;
+    R = 210;
+    angles = [-90, -18, 54, 126, 198];
+  } else if (count === 10) {
+    width = 95;
+    height = 80;
+    R = 215;
+    for (let i = 0; i < 10; i++) {
+      angles.push(-90 + i * 36);
+    }
+  }
+  
+  // Update Query Node Shape class based on count
+  const queryNode = document.getElementById("node-query");
+  if (queryNode) {
+    queryNode.classList.remove("shape-circle", "shape-pentagon", "shape-decagon");
+    if (count === 1) {
+      queryNode.classList.add("shape-circle");
+    } else if (count === 5) {
+      queryNode.classList.add("shape-pentagon");
+    } else if (count === 10) {
+      queryNode.classList.add("shape-decagon");
+    }
+  }
+  
+  const cx = 360; // container center X (720 / 2)
+  const cy = 260; // container center Y (520 / 2)
+  
+  for (let i = 0; i < count; i++) {
+    const angleRad = (angles[i] * Math.PI) / 180;
+    const x = cx + R * Math.cos(angleRad) - (width / 2);
+    const y = cy + R * Math.sin(angleRad) - (height / 2);
+    
+    const nodeCx = x + (width / 2);
+    const nodeCy = y + (height / 2);
+    const nodeIndex = i + 1;
+    
+    // Create connector line element inside threads SVG
+    if (svg) {
+      const lineEl = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      lineEl.setAttribute("id", `thread-link-${nodeIndex}`);
+      lineEl.setAttribute("class", "retrieval-thread");
+      lineEl.setAttribute("x1", cx);
+      lineEl.setAttribute("y1", cy);
+      lineEl.setAttribute("x2", nodeCx);
+      lineEl.setAttribute("y2", nodeCy);
+      svg.appendChild(lineEl);
+    }
+    
+    const nodeEl = document.createElement("div");
+    nodeEl.id = `node-result-${nodeIndex}`;
+    nodeEl.className = `rect-item result-node disabled-node`;
+    nodeEl.style.width = `${width}px`;
+    nodeEl.style.height = `${height}px`;
+    nodeEl.style.left = `${x}px`;
+    nodeEl.style.top = `${y}px`;
+    
+    nodeEl.innerHTML = `
+      <div class="rect-image-container">
+        <canvas id="canvas-result-${nodeIndex}" class="rect-img-canvas" width="500" height="500"></canvas>
+        <div class="rect-label" style="font-size: ${count === 10 ? '0.45rem' : '0.6rem'};">MATCH ${String(nodeIndex).padStart(2, '0')}</div>
+      </div>
+      <div class="corner-confidence" style="width: 44px; height: 44px;">
+        <svg class="confidence-ring" viewBox="0 0 44 44" style="width: 44px; height: 44px;">
+          <circle class="ring-bg" cx="22" cy="22" r="16" style="stroke-width: 2.5px; fill: none; stroke: rgba(255, 255, 255, 0.05);"></circle>
+          <circle id="ring-fill-${nodeIndex}" data-dasharray="100.5" class="ring-fill" cx="22" cy="22" r="16" style="stroke-width: 3px; stroke-dasharray: 100.5px; stroke-dashoffset: 100.5px; fill: none; stroke: var(--color-result); stroke-linecap: round; transition: stroke-dashoffset 1s ease-out, stroke var(--transition-speed);"></circle>
+        </svg>
+        <div class="confidence-value" id="val-conf-${nodeIndex}">--%</div>
+      </div>
+    `;
+    
+    container.appendChild(nodeEl);
+    
+    nodeEl.addEventListener("click", () => {
+      if (state.activeTarget && !nodeEl.classList.contains("disabled-node")) {
+        const [_, toCode] = state.modality.split("-to-");
+        const matchLabel = `MATCH ${String(nodeIndex).padStart(2, '0')} ${getModalityName(toCode)} OUTPUT`;
+        openImageInspection(document.getElementById(`canvas-result-${nodeIndex}`), matchLabel, state.activeTarget);
+      }
+    });
+  }
 }
 
 // 7. SENSOR MODALITY PATHWAY CONTROLLER (Static Side Layouts)
@@ -756,11 +926,25 @@ function triggerModalityChange(pathway) {
       shell.classList.remove("flipped-layout");
     }
     
+    // Set specific pathway class for custom color combinations
+    shell.classList.remove("pathway-S1-to-S2", "pathway-S2-to-S1", "pathway-S1-to-S1", "pathway-S2-to-S2");
+    shell.classList.add(`pathway-${pathway}`);
+    
     // Update headers text labels
     const [fromCode, toCode] = pathway.split("-to-");
     document.querySelector(".s1-tag").innerText = `MODALITY A: ${getModalityName(fromCode)}`;
     document.querySelector(".s2-tag").innerText = `MODALITY B: ${getModalityName(toCode)}`;
     document.getElementById("hex-grid-title").innerText = `RETRIEVAL NEIGHBORHOOD MAP (${getModalityName(toCode)} MATCH)`;
+    
+    // Update bridge tag text based on whether it is unimodality or cross-modality
+    const bridgeTag = document.querySelector(".bridge-tag");
+    if (bridgeTag) {
+      if (fromCode === toCode) {
+        bridgeTag.innerText = "⮂ AUTO-CORRELATION ⮀";
+      } else {
+        bridgeTag.innerText = "⮂ CROSS-CORRELATION ⮀";
+      }
+    }
     
     // Re-run scan with active target
     if (state.activeTarget) {
@@ -818,17 +1002,17 @@ document.getElementById("node-query").addEventListener("click", () => {
   }
 });
 
-// Bind click listeners for 5 surrounding circle match nodes
-for (let i = 1; i <= 5; i++) {
-  document.getElementById(`node-result-${i}`).addEventListener("click", () => {
-    const nodeEl = document.getElementById(`node-result-${i}`);
-    if (state.activeTarget && !nodeEl.classList.contains("disabled-node")) {
-      const [_, toCode] = state.modality.split("-to-");
-      const matchLabel = `MATCH 0${i} ${getModalityName(toCode)} OUTPUT`;
-      openImageInspection(document.getElementById(`canvas-result-${i}`), matchLabel, state.activeTarget);
+// Output Count Selector Change event listener
+document.getElementById("output-count-selector").addEventListener("change", (e) => {
+  const count = parseInt(e.target.value, 10);
+  if (count && !state.isScanning) {
+    state.outputCount = count;
+    renderDynamicResultNodes();
+    if (state.activeTarget) {
+      triggerRetrievalPipeline(state.activeTarget);
     }
-  });
-}
+  }
+});
 
 // 9. EVENTS REGISTRATION
 document.getElementById("modality-selector").addEventListener("change", (e) => {
@@ -861,6 +1045,10 @@ fileInput.addEventListener("change", (e) => {
 window.addEventListener("load", () => {
   initUniverse();
   addLog("ASTRONOVA SATELLITE CORE SYSTEM ONLINE.", "info");
+  
+  // Set default output count and draw matches
+  state.outputCount = 5;
+  renderDynamicResultNodes();
   
   // Load Default Tokyo target initially
   triggerRetrievalPipeline(TARGET_DIRECTORY.tokyo);

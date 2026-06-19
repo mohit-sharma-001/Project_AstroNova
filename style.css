@@ -23,16 +23,33 @@
   --transition-speed: 0.5s;
 }
 
-/* Modality Flipped (Query is S2-Optical [Violet], Result is S1-SAR [Teal/Blue]) */
-#system-shell.flipped-layout {
-  --color-query: #9d4ede;
-  --color-result: #00e5ff;
-  
+/* Modality Pathway Theme Overrides */
+#system-shell.pathway-S1-to-S2 {
+  --color-query: #00e5ff;       /* Electric Blue / Neon Teal */
+  --color-result: #9d4ede;      /* Soft Violet / Cosmic Purple */
+  --border-query: rgba(0, 229, 255, 0.25);
+  --border-result: rgba(157, 78, 221, 0.25);
+}
+
+#system-shell.pathway-S2-to-S1 {
+  --color-query: #9d4ede;       /* Soft Violet / Cosmic Purple */
+  --color-result: #00e5ff;      /* Electric Blue / Neon Teal */
   --border-query: rgba(157, 78, 221, 0.25);
   --border-result: rgba(0, 229, 255, 0.25);
-  
-  --shadow-query: 0 4px 15px rgba(0, 0, 0, 0.8);
-  --shadow-result: 0 4px 15px rgba(0, 0, 0, 0.8);
+}
+
+#system-shell.pathway-S1-to-S1 {
+  --color-query: #00e5ff;       /* Electric Blue / Neon Teal */
+  --color-result: #00e5ff;      /* Electric Blue / Neon Teal */
+  --border-query: rgba(0, 229, 255, 0.25);
+  --border-result: rgba(0, 229, 255, 0.25);
+}
+
+#system-shell.pathway-S2-to-S2 {
+  --color-query: #9d4ede;       /* Soft Violet / Cosmic Purple */
+  --color-result: #9d4ede;      /* Soft Violet / Cosmic Purple */
+  --border-query: rgba(157, 78, 221, 0.25);
+  --border-result: rgba(157, 78, 221, 0.25);
 }
 
 /* Reset and Layout Bases */
@@ -202,7 +219,8 @@ body {
   color: rgba(255, 255, 255, 0.6);
 }
 
-#target-selector {
+#modality-selector,
+#output-count-selector {
   background: rgba(3, 5, 12, 0.8);
   border: 1px solid var(--border-query);
   border-radius: 4px;
@@ -214,9 +232,17 @@ body {
   transition: border-color var(--transition-speed);
 }
 
-#target-selector option {
+#modality-selector option,
+#modality-selector optgroup,
+#output-count-selector option {
   background: #080b18;
   color: #fff;
+  font-family: var(--font-mono);
+}
+
+#modality-selector optgroup {
+  color: #888;
+  font-weight: bold;
 }
 
 /* Tactical buttons */
@@ -517,8 +543,8 @@ body {
 
 .honeycomb-grid {
   position: relative;
-  width: 700px;
-  height: 480px;
+  width: 720px;
+  height: 520px;
   margin: 15px auto 0 auto;
 }
 
@@ -584,30 +610,39 @@ body {
   letter-spacing: 0.5px;
 }
 
-/* Circle Items (Enlarged Surrounding Nodes) */
-.circle-item {
+/* Rectangular surrounding nodes */
+.rect-item {
   position: absolute;
-  width: 150px;
-  height: 150px;
-  border-radius: 50%;
   transition: transform 0.3s ease, filter 0.3s ease;
   z-index: 4;
 }
 
-.circle-image-container {
+.rect-image-container {
   width: 100%;
   height: 100%;
-  border-radius: 50%;
   position: relative;
   background: rgba(3, 5, 12, 0.9);
   border: 2px solid var(--color-result);
   box-shadow: var(--shadow-result);
+  border-radius: 6px;
   overflow: hidden;
   cursor: pointer;
   transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
 }
 
-.circle-img-canvas {
+.rect-image-container::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.rect-img-canvas {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -617,38 +652,203 @@ body {
   background: #040815;
 }
 
-.circle-item:hover .circle-img-canvas {
+.rect-item:hover .rect-img-canvas {
   opacity: 1;
 }
 
-.circle-label {
+.rect-label {
   position: absolute;
-  bottom: 12px;
+  bottom: 0;
   left: 0;
   width: 100%;
   text-align: center;
   font-family: var(--font-mono);
   font-size: 0.6rem;
   color: #fff;
-  background: rgba(0, 0, 0, 0.65);
-  padding: 2px 0;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 4px 0;
   letter-spacing: 0.5px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Corner circular confidence indicator */
+.corner-confidence {
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  width: 44px;
+  height: 44px;
+  z-index: 10;
+  background: #080c1a;
+  border-radius: 50%;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+  border: 1px solid var(--border-result);
+  transition: border-color var(--transition-speed);
+}
+
+.corner-confidence .confidence-ring {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.corner-confidence .confidence-value {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  font-weight: bold;
+  color: var(--color-result);
+  transition: color var(--transition-speed);
+  border: none;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  text-shadow: 0 0 3px rgba(0,0,0,0.8);
+}
+
+.disabled-node .corner-confidence {
+  display: none;
 }
 
 /* Absolute Positions inside Grid */
 .query-node {
-  left: 260px;
-  top: 146px;
+  position: absolute;
+  left: 265px;
+  top: 165px;
   visibility: visible;
   z-index: 5;
-  width: 180px;
-  height: 208px;
+  width: 170px;
+  height: 170px;
+  transition: transform 0.3s ease, filter 0.3s ease;
 }
 
-.query-node .hex-image-container {
-  border: 2px solid var(--color-query);
+.query-image-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background: rgba(3, 5, 12, 0.9);
+  cursor: pointer;
   box-shadow: var(--shadow-query);
-  transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
+}
+
+.query-image-container::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 3px solid var(--color-query);
+  box-shadow: inset 0 0 20px rgba(0, 229, 255, 0.3);
+  pointer-events: none;
+  z-index: 3;
+  transition: border-color var(--transition-speed);
+}
+
+.query-img-canvas {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  opacity: 0.85;
+  transition: opacity 0.3s ease;
+  background: #040815;
+}
+
+.query-node:hover .query-img-canvas {
+  opacity: 1;
+}
+
+.query-label {
+  position: absolute;
+  bottom: 15px;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 2px 0;
+  letter-spacing: 0.5px;
+  z-index: 4;
+}
+
+.query-pulsar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 1px solid var(--color-query);
+  animation: query-pulse-grow 2s infinite ease-in-out;
+  pointer-events: none;
+  z-index: -1;
+  transition: border-color var(--transition-speed);
+}
+
+@keyframes query-pulse-grow {
+  0% { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(1.18); opacity: 0; }
+}
+
+/* Shape-specific Clip-Paths */
+
+/* Circle Shape (Output Count = 1) */
+.query-node.shape-circle .query-image-container,
+.query-node.shape-circle .query-image-container::after,
+.query-node.shape-circle .query-pulsar {
+  clip-path: circle(50% at 50% 50%);
+}
+
+/* Pentagon Shape (Output Count = 5) */
+.query-node.shape-pentagon .query-image-container,
+.query-node.shape-pentagon .query-image-container::after,
+.query-node.shape-pentagon .query-pulsar {
+  clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+}
+
+/* Decagon Shape (Output Count = 10) */
+.query-node.shape-decagon .query-image-container,
+.query-node.shape-decagon .query-image-container::after,
+.query-node.shape-decagon .query-pulsar {
+  clip-path: polygon(50% 0%, 79.4% 9.5%, 97.6% 34.5%, 97.6% 65.5%, 79.4% 90.5%, 50% 100%, 20.6% 90.5%, 2.4% 65.5%, 2.4% 34.5%, 20.6% 9.5%);
+}
+
+/* Connecting Threads SVG Overlay */
+#retrieval-threads-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.retrieval-thread {
+  stroke: var(--color-query);
+  stroke-width: 2;
+  stroke-dasharray: 6, 6;
+  stroke-linecap: round;
+  opacity: 0;
+  transition: stroke var(--transition-speed), opacity 0.5s ease;
+  animation: thread-flow 1.5s infinite linear;
+}
+
+.retrieval-thread.active {
+  opacity: 0.65;
+}
+
+@keyframes thread-flow {
+  from { stroke-dashoffset: 12; }
+  to { stroke-dashoffset: 0; }
 }
 
 .result-node {
@@ -702,20 +902,7 @@ body {
   display: none;
 }
 
-/* Central node Pulse visual ring */
-.hex-pulsar {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border: 1px solid var(--color-query);
-  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-  animation: hex-pulse-grow 2s infinite ease-in-out;
-  pointer-events: none;
-  z-index: -1;
-  transition: border-color var(--transition-speed);
-}
+/* hex-pulsar replaced by pent-pulsar */
 
 /* Confidence circular overlay indicators */
 .confidence-ring {
